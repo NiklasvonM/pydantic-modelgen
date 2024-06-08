@@ -2,7 +2,7 @@
 
 Create Pydantic `BaseModel`s from JSON Schema at runtime.
 
-[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-312/)
+[![Python Version](https://img.shields.io/badge/python-3.8%20|%203.9%20|%203.10%20|%203.11%20|%203.12-blue)](https://www.python.org/downloads/)
 [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Mypy](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/mypy.yml/badge.svg)](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/mypy.yml)

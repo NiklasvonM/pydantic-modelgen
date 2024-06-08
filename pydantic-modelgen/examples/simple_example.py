@@ -12,9 +12,12 @@ def main() -> None:
         },
     }
     model = generate_basemodel(json_schema, validate_schema=True)
+    print("Model:")
     print(model)
+    print("\nModel fields:")
     print(model.model_fields)
     instance = model(**{"name": "John Doe", "age": 30, "gender": "male"})
+    print("\nInstance:")
     print(instance)
 
 

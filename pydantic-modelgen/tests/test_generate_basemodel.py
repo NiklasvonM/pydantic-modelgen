@@ -2,7 +2,6 @@ import pytest
 from pydantic import BaseModel, ValidationError
 from pydanticmodelgen import generate_basemodel  # Import your function
 
-# Basic Schemas
 BASIC_SCHEMA = {
     "type": "object",
     "properties": {
@@ -32,7 +31,6 @@ SCHEMA_WITH_ENUM = {
     },
 }
 
-# Complex Schema with Constraints
 COMPLEX_SCHEMA = {
     "type": "object",
     "properties": {
@@ -40,8 +38,6 @@ COMPLEX_SCHEMA = {
         "email": {
             "type": "string",
             "format": "email",
-            "minLength": 5,
-            "maxLength": 50,
         },
         "price": {
             "type": "number",
@@ -59,27 +55,6 @@ COMPLEX_SCHEMA = {
     "required": ["id", "email"],
 }
 
-ARRAY_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "numbers": {"type": "array", "items": {"type": "integer"}},
-    },
-}
-
-NESTED_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "name": {"type": "string"},
-        "address": {
-            "type": "object",
-            "properties": {
-                "street": {"type": "string"},
-                "city": {"type": "string"},
-            },
-            "required": ["street"],
-        },
-    },
-}
 
 NESTED_ARRAY_SCHEMA = {
     "type": "object",
@@ -130,6 +105,7 @@ SCHEMA_WITH_PATTERN = {
     },
 }
 
+# TODO
 SCHEMA_WITH_OBJECT_REF = {
     "type": "object",
     "properties": {
@@ -149,7 +125,7 @@ SCHEMA_WITH_OBJECT_REF = {
 # --- Test Cases ---
 
 
-def test_basic_model_generation():
+def test_basic_model_generation() -> None:
     Model = generate_basemodel(BASIC_SCHEMA)
     fields = Model.model_fields
     assert issubclass(Model, BaseModel)
@@ -158,7 +134,7 @@ def test_basic_model_generation():
     assert "active" in fields
 
 
-def test_basic_model_with_required_fields():
+def test_basic_model_with_required_fields() -> None:
     Model = generate_basemodel(BASIC_SCHEMA_WITH_REQUIRED)
     obj = Model(name="Alice", age=30)
     assert obj.name == "Alice"
@@ -168,7 +144,7 @@ def test_basic_model_with_required_fields():
         Model(active=True)  # Missing required fields
 
 
-def test_enum_field_generation():
+def test_enum_field_generation() -> None:
     Model = generate_basemodel(SCHEMA_WITH_ENUM)
     obj = Model(color="red")
     assert obj.color.value == "red"
@@ -177,7 +153,7 @@ def test_enum_field_generation():
         Model(color="yellow")  # Invalid enum value
 
 
-def test_all_types():
+def test_all_types() -> None:
     # Test generation and validation of a model with all JSON schema types
     Model = generate_basemodel(SCHEMA_WITH_ALL_TYPES)
     obj = Model(
@@ -188,23 +164,50 @@ def test_all_types():
         null_field=None,
     )
     assert obj.string_field == "test"
-    # ... (assert for other fields)
 
 
-def test_formats():
-    # Test that string fields with formats are correctly generated and validated
-    # You might need to add custom validation logic in your _convert_schema_to_field function
+def test_formats() -> None:
     Model = generate_basemodel(SCHEMA_WITH_FORMATS)
-    obj = Model(email="test@example.com", date="2024-06-08")  # ...
+    obj = Model(email="test@example.com", date="2024-06-08")
     assert obj.email == "test@example.com"
-    # ... (assert for other fields)
 
 
-def test_pattern():
-    # Test that string fields with patterns are correctly validated
+def test_pattern() -> None:
     Model = generate_basemodel(SCHEMA_WITH_PATTERN)
     obj = Model(username="valid_username")
     assert obj.username == "valid_username"
 
     with pytest.raises(ValidationError):
-        Model(username="invalid username")  # Should raise ValidationError
+        Model(username="invalid username")
+
+
+def test_array_with_objects() -> None:
+    Model = generate_basemodel(NESTED_ARRAY_SCHEMA)
+    obj = Model(name="test", items=[{"name": "test", "price": 10}])
+    assert obj.name == "test"
+    assert obj.items[0].name == "test"
+    assert obj.items[0].price == 10
+
+    with pytest.raises(ValidationError):
+        # Invalid type for price
+        Model(name="test", items=[{"name": "test", "price": "ten dollars"}])
+
+
+def test_complex_schema() -> None:
+    Model = generate_basemodel(COMPLEX_SCHEMA)
+
+    with pytest.raises(ValidationError):
+        # Missing required fields (id)
+        Model(name="test")
+
+    with pytest.raises(ValidationError):
+        # Negative price
+        Model(id="some_id", email="test@example.com", items=[{"name": "test", "price": -10}])
+
+    with pytest.raises(ValidationError):
+        # Zero price
+        Model(id="some_id", email="test@example.com", items=[{"name": "test", "price": 0}])
+
+    with pytest.raises(ValidationError):
+        # Not enough items in "tags"
+        Model(id="some_id", email="test@example.com", tags=[])

@@ -11,6 +11,7 @@ packages = [{ include = "pydanticmodelgen", from = "pydantic-modelgen/src" }]
 python = ">= 3.8"
 pydantic = ">= 2.7.0"
 jsonschema = ">= 4.22.0"
+python-dateutil = "^2.9.0.post0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.8"
@@ -21,6 +22,7 @@ pytest-cov = "^5.0.0"
 lxml = "^5.2.2"
 bandit = "^1.7.8"
 tox = "^4.15.1"
+types-python-dateutil = "^2.9.0.20240316"
 
 [build-system]
 requires = ["poetry-core"]
@@ -31,6 +33,11 @@ exclude_dirs = ["venv", ".venv"]
 
 [tool.mypy]
 disallow_any_explicit = false
+
+[tool.pytest.ini_options]
+testpaths = [
+    "pydantic-modelgen/tests"
+]
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -87,11 +94,11 @@ select = [
     # isort
     "I",
 ]
-ignore = []
+ignore = ["UP006", "UP035"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
-unfixable = []
+unfixable = ["UP006", "UP035"]
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"

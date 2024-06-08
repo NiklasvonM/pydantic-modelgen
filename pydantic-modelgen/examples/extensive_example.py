@@ -1,3 +1,4 @@
+from dateutil.parser import parse
 from pydanticmodelgen import generate_basemodel
 
 
@@ -9,6 +10,7 @@ def main() -> None:
         "properties": {
             "name": {"type": "string"},
             "age": {"type": "integer", "minimum": 0},
+            "birthday": {"format": "date", "enum": ["2000-01-01", "2000-01-02"]},
             "gender": {"enum": ["male", "female", "other"]},
             "address": {
                 "type": "object",
@@ -44,10 +46,21 @@ def main() -> None:
     }
 
     model = generate_basemodel(json_schema, validate_schema=True)
+    print("Model:")
     print(model)
+    print("\nModel fields:")
     print(model.model_fields)
 
-    instance = model(**{"name": "John Doe", "age": 30, "gender": "male"})
+    instance = model(
+        **{
+            "name": "John Doe",
+            "age": 30,
+            "gender": "male",
+            "birthday": parse("2000-01-01").date(),
+            "friends": [{"name": "Jane Boe", "age": 25}],
+        }
+    )
+    print("\nInstance:")
     print(instance)
 
 

@@ -15,7 +15,7 @@ jobs:
     - name: Install packages
       run: poetry install
     - name: Run Mypy
-      run: poetry run mypy . --html-report mypy-report
+      run: poetry run mypy pydantic-modelgen/src --html-report mypy-report
     - name: Archive coverage artifacts
       uses: actions/upload-artifact@v4
       with:

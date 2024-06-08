@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import datetime
-from enum import Enum
-from typing import Any
+from typing import Annotated, Any, List, Set, cast
 
 from jsonschema import Draft7Validator, validate
 from pydantic import BaseModel, Field, create_model
+
+from .translation import get_field_type, handle_numeric_kwargs, handle_string_kwargs
 
 
 def generate_basemodel(
@@ -16,103 +16,92 @@ def generate_basemodel(
     Generates a Pydantic BaseModel from a JSON Schema.
 
     Args:
-        schema: The JSON Schema (as a dictionary).
-        validate_schema: If True, validates the schema against the JSON Schema specification.
-        model_name: Optional name for the generated model. Defaults to 'DynamicModel'
-
-    Raises:
-        ValidationError: If `validate_schema` is True and the schema is invalid.
+        - schema: The JSON Schema to convert to a Pydantic model.
+        - validate_schema : Whether to validate the JSON Schema. Defaults to True.
+        - model_name: The name of the model. If not provided, uses the title of the schema or
+        "DynamicModel".
 
     Returns:
-        The generated Pydantic BaseModel class.
+        type[BaseModel]: The generated Pydantic BaseModel.
     """
 
     if validate_schema:
-        metaschema = Draft7Validator.META_SCHEMA
-        validate(schema, metaschema)
+        validate(schema, Draft7Validator.META_SCHEMA)
 
     fields: dict[str, Any] = {}
-    for prop_name, prop_schema in schema.get("properties", {}).items():
-        field_type, field_kwargs = _convert_schema_to_field(prop_name, prop_schema)
+    properties: dict[str, dict[str, Any]] = schema.get("properties", {})
+    for prop_name, prop_schema in properties.items():
+        field_type = get_field_type(prop_name, prop_schema)
+        field_kwargs = get_field_kwargs(prop_name, prop_schema, field_type)
         is_required = prop_name in schema.get("required", [])
-        field_info = Field(default=... if is_required else None, **field_kwargs)
-        fields[prop_name] = (field_type, field_info)
+        default_value = prop_schema.get("default")
+        field_info = {"default": ... if is_required else default_value, **field_kwargs}
+        fields[prop_name] = create_field(field_type, field_info)
 
     model_name = model_name or schema.get("title") or "DynamicModel"  # Default model name
     result = create_model(model_name, **fields)
     return result
 
 
-def _convert_schema_to_field(
-    prop_name: str, prop_schema: Mapping[str, Any]
-) -> tuple[Any, dict[str, Any]]:
-    """
-    Converts a JSON Schema property definition to a Pydantic Field type and keyword arguments.
+def create_field(field_type: Any, field_info: dict[str, Any]) -> Any:
+    """Creates a Pydantic Field with the given type and information."""
+    if field_type is List and "__args__" in field_info:
+        item_type = field_info.pop("__args__")[0]  # Extract item type
 
-    This function is a placeholder for the actual conversion logic, which would be implemented
-    based on the JSON Schema specification (types, formats, constraints, etc.).
+        # Pydantic uses `set` for `unique_items`, see
+        # https://github.com/pydantic/pydantic-core/issues/296.
+        field_type = Set[item_type] if field_info.pop("unique_items", False) else List[item_type]  # type: ignore
 
-    Args:
-        prop_name: The name of the JSON Schema property.
-        prop_schema: The JSON Schema property definition.
+    return Annotated[field_type, Field(**field_info)]
 
-    Returns:
-        A tuple containing:
-            - The Pydantic Field type (e.g., str, int, float, etc.).
-            - A dictionary of keyword arguments for Field (e.g., description, default, etc.).
-    """
 
-    # Placeholder implementation:
-    field_type = Any  # Default to Any type
+def get_field_kwargs(
+    prop_name: str, prop_schema: Mapping[str, Any], field_type: Any
+) -> dict[str, Any]:
+    """Generates keyword arguments for the Pydantic Field."""
+
     field_kwargs: dict[str, Any] = {}
     if "description" in prop_schema:
         field_kwargs["description"] = prop_schema["description"]
-    if "enum" in prop_schema:
-        field_type = Enum(prop_name + "Enum", {value: value for value in prop_schema["enum"]})  # type: ignore
-    elif "type" in prop_schema:
-        type_mapping = {
-            "string": str,
-            "number": float,
-            "integer": int,
-            "boolean": bool,
-        }
-        field_type = type_mapping.get(prop_schema["type"], Any)
+    if field_type in [int, float]:
+        handle_numeric_kwargs(prop_schema, field_kwargs)
+    if field_type is str:
+        handle_string_kwargs(prop_schema, field_kwargs)
+    if field_type is List:
+        handle_array_kwargs(prop_name, prop_schema, field_kwargs)
 
-        if prop_schema["type"] == "array":
-            item_kwargs: dict[str, Any] = {}  # Initialize item_kwargs here
-            if "$ref" in prop_schema.get("items", {}):  # Handle references
-                item_type = generate_basemodel(prop_schema["items"]["$ref"])
-            elif prop_schema["items"].get("type") == "object":
-                item_type = generate_basemodel(prop_schema["items"], model_name=prop_name + "Item")
-            else:
-                item_type, item_kwargs = _convert_schema_to_field(
-                    prop_name + "_item", prop_schema.get("items", {})
-                )
-            return list[item_type], item_kwargs  # type: ignore
+    return field_kwargs
 
-        if prop_schema["type"] == "string":
-            if prop_schema.get("format") == "date-time":
-                field_type = datetime
-            else:
-                pass
 
-    if "pattern" in prop_schema:
-        field_kwargs["pattern"] = prop_schema["pattern"]
+def handle_array_kwargs(
+    prop_name: str, prop_schema: Mapping[str, Any], field_kwargs: dict[str, Any]
+) -> None:
+    if "minItems" in prop_schema:
+        field_kwargs["min_length"] = prop_schema["minItems"]
+    if "maxItems" in prop_schema:
+        field_kwargs["max_length"] = prop_schema["maxItems"]
+    if "uniqueItems" in prop_schema:
+        # Pydantic doesn't support `unique_items` as a keyword argument,
+        # but we use `Set` instead of `List` later on when calling `pydantic.Field`.
+        field_kwargs["unique_items"] = prop_schema["uniqueItems"]
 
-    if "exclusiveMinimum" in prop_schema:
-        field_kwargs["gt"] = prop_schema["exclusiveMinimum"]
-    if "exclusiveMaximum" in prop_schema:
-        field_kwargs["lt"] = prop_schema["exclusiveMaximum"]
-    if "minimum" in prop_schema:
-        field_kwargs["ge"] = prop_schema["minimum"]
-    if "maximum" in prop_schema:
-        field_kwargs["le"] = prop_schema["maximum"]
-    # minLength, maxLength
-    if "minLength" in prop_schema:
-        field_kwargs["min_length"] = prop_schema["minLength"]
-    if "maxLength" in prop_schema:
-        field_kwargs["max_length"] = prop_schema["maxLength"]
+    # Get array item type and additional field parameters for items
+    item_type, item_field_kwargs = get_field_type_and_kwargs_for_array_items(
+        prop_name + "_item", cast(Mapping[str, Any], prop_schema.get("items", {}))
+    )
+    field_kwargs["__args__"] = (item_type,)
+    if item_field_kwargs:
+        field_kwargs["item_field"] = Field(**item_field_kwargs)
 
-    # Add logic to handle other schema properties here...
 
-    return field_type, field_kwargs
+def get_field_type_and_kwargs_for_array_items(prop_name: str, prop_schema: Mapping[str, Any]):
+    if "$ref" in prop_schema:
+        item_type = generate_basemodel(prop_schema["$ref"], validate_schema=False)
+        return item_type, {}
+    elif prop_schema.get("type") == "object":
+        item_type = generate_basemodel(prop_schema, model_name=prop_name + "Item")
+        return item_type, {}
+    else:
+        item_type = get_field_type(prop_name, prop_schema)
+        item_field_kwargs = get_field_kwargs(prop_name, prop_schema, item_type)
+        return item_type, item_field_kwargs

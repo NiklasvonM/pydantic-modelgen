@@ -2,6 +2,16 @@
 
 Create Pydantic `BaseModel`s from JSON Schema at runtime.
 
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-312/)
+[![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Mypy](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/mypy.yml/badge.svg)](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/mypy.yml)
+[![Ruff](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/ruff.yml/badge.svg)](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/ruff.yml)
+[![Tests](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/tests.yml/badge.svg)](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/tests.yml)
+[![Security](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/bandit.yml/badge.svg)](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/bandit.yml)
+
+## Usage
+
 ```python
 from pydanticmodelgen import generate_basemodel
 

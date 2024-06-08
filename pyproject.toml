@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{ include = "pydanticmodelgen", from = "pydantic-modelgen/src" }]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">= 3.8"
 pydantic = ">= 2.7.0"
 jsonschema = ">= 4.22.0"
 
@@ -20,6 +20,7 @@ types-jsonschema = "^4.22.0.20240501"
 pytest-cov = "^5.0.0"
 lxml = "^5.2.2"
 bandit = "^1.7.8"
+tox = "^4.15.1"
 
 [build-system]
 requires = ["poetry-core"]

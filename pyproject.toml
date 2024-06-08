@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{ include = "pydanticmodelgen", from = "pydantic-modelgen/src" }]
 
 [tool.poetry.dependencies]
-python = ">= 3.7"
+python = ">= 3.8"
 pydantic = ">= 2.7.0"
 jsonschema = ">= 4.22.0"
 

@@ -25,7 +25,19 @@ jobs:
 
       - name: Build Documentation
         run: poetry run sphinx-build -b html docs/source docs/build
-      
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation-build
+          path: docs/build/html
+
+      - name: Echo Build Directory Contents
+        run: |
+          ls -la docs
+          ls -la docs/build
+        
+
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:

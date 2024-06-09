@@ -147,7 +147,7 @@ def test_basic_model_with_required_fields() -> None:
 def test_enum_field_generation() -> None:
     Model = generate_basemodel(SCHEMA_WITH_ENUM)
     obj = Model(color="red")
-    assert obj.color.value == "red"
+    assert obj.color == "red"
 
     with pytest.raises(ValidationError):
         Model(color="yellow")  # Invalid enum value

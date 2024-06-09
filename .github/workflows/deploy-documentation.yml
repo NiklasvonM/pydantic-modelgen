@@ -1,0 +1,33 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install packages
+        run: poetry install
+
+      - name: Build Documentation
+        run: poetry run sphinx-build -b html docs/source docs/build
+      
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4.4.0
+        with:
+          branch: gh-pages
+          folder: docs/build/html

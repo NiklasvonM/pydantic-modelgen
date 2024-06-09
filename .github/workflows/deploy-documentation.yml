@@ -26,6 +26,9 @@ jobs:
       - name: Build Documentation
         run: poetry run sphinx-build -b html docs/source docs/build
 
+      - name: Create .nojekyll File
+        run: touch docs/build/.nojekyll
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:

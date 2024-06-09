@@ -10,6 +10,8 @@ Create Pydantic `BaseModel`s from JSON Schema at runtime.
 [![Tests](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/tests.yml/badge.svg)](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/tests.yml)
 [![Security](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/bandit.yml/badge.svg)](https://github.com/NiklasvonM/pydantic-modelgen/actions/workflows/bandit.yml)
 
+See [documentation](https://niklasvonm.github.io/pydantic-modelgen/).
+
 ## Usage
 
 ```python

@@ -15,14 +15,11 @@ def generate_basemodel(
     """
     Generates a Pydantic BaseModel from a JSON Schema.
 
-    Args:
-        - schema: The JSON Schema to convert to a Pydantic model.
-        - validate_schema : Whether to validate the JSON Schema. Defaults to True.
-        - model_name: The name of the model. If not provided, uses the title of the schema or
+    :param schema: The JSON Schema to convert to a Pydantic model.
+    :param validate_schema: Whether to validate the JSON Schema. Defaults to True.
+    :param model_name: The name of the model. If not provided, uses the title of the schema or
         "DynamicModel".
-
-    Returns:
-        type[BaseModel]: The generated Pydantic BaseModel.
+    :return: The generated Pydantic BaseModel.
     """
 
     if validate_schema:

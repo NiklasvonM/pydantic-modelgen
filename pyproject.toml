@@ -14,6 +14,7 @@ jsonschema = ">= 4.22.0"
 python-dateutil = "^2.9.0.post0"
 
 [tool.poetry.group.dev.dependencies]
+sphinx = { version = "^7.3.7", python = ">=3.9" }
 ruff = "^0.4.8"
 mypy = "^1.10.0"
 pytest = "^8.2.2"

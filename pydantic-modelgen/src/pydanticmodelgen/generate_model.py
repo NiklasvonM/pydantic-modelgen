@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from typing import Annotated, Any, List, Set, cast
 
 from jsonschema import Draft7Validator, validate
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from .translation import get_field_type, handle_numeric_kwargs, handle_string_kwargs
 
@@ -28,25 +28,40 @@ def generate_basemodel(
     if validate_schema:
         validate(schema, Draft7Validator.META_SCHEMA)
 
+    fields = create_fields_from_schema(schema)
+    model_name = model_name or schema.get("title") or "DynamicModel"  # Default model name
+    config_dict = ConfigDict(
+        extra="allow" if schema.get("additionalProperties", False) else "ignore",
+        use_enum_values=True,
+    )
+    result = create_model(model_name, __config__=config_dict, **fields)
+    return result
+
+
+def create_fields_from_schema(schema: Mapping[str, Any]) -> dict[str, Any]:
     fields: dict[str, Any] = {}
     properties: dict[str, dict[str, Any]] = schema.get("properties", {})
     for prop_name, prop_schema in properties.items():
-        field_type = get_field_type(prop_name, prop_schema)
-        field_kwargs = get_field_kwargs(prop_name, prop_schema, field_type)
-        is_required = prop_name in schema.get("required", [])
-        default_value = prop_schema.get("default")
-        field_info = {"default": ... if is_required else default_value, **field_kwargs}
-        fields[prop_name] = create_field(field_type, field_info)
+        required = prop_name in schema.get("required", [])
+        fields[prop_name] = create_field_from_properties(prop_name, prop_schema, required=required)
+    return fields
 
-    model_name = model_name or schema.get("title") or "DynamicModel"  # Default model name
-    result = create_model(model_name, **fields)
-    return result
+
+def create_field_from_properties(
+    prop_name: str, prop_schema: Mapping[str, Any], required: bool
+) -> Any:
+    field_type = get_field_type(prop_name, prop_schema)
+    field_kwargs = get_field_kwargs(prop_name, prop_schema, field_type)
+    default_value = prop_schema.get("default")
+    field_info = {"default": ... if required else default_value, **field_kwargs}
+    field = create_field(field_type, field_info)
+    return field
 
 
 def create_field(field_type: Any, field_info: dict[str, Any]) -> Any:
     """Creates a Pydantic Field with the given type and information."""
-    if field_type is List and "__args__" in field_info:
-        item_type = field_info.pop("__args__")[0]  # Extract item type
+    if field_type is List and "item_type" in field_info:
+        item_type = field_info.pop("item_type")
 
         # Pydantic uses `set` for `unique_items`, see
         # https://github.com/pydantic/pydantic-core/issues/296.
@@ -89,7 +104,7 @@ def handle_array_kwargs(
     item_type, item_field_kwargs = get_field_type_and_kwargs_for_array_items(
         prop_name + "_item", cast(Mapping[str, Any], prop_schema.get("items", {}))
     )
-    field_kwargs["__args__"] = (item_type,)
+    field_kwargs["item_type"] = item_type
     if item_field_kwargs:
         field_kwargs["item_field"] = Field(**item_field_kwargs)
 

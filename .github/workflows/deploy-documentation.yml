@@ -30,16 +30,10 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: documentation-build
-          path: docs/build/html
-
-      - name: Echo Build Directory Contents
-        run: |
-          ls -la docs
-          ls -la docs/build
-        
+          path: docs/build
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:
           branch: gh-pages
-          folder: docs/build/html
+          folder: docs/build

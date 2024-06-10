@@ -8,13 +8,14 @@ from typing import Any, List
 from dateutil.parser import parse as parse_datetime
 from pydantic import BaseModel
 
-from pydanticmodelgen.errors import EnumConversionError, SchemaConversionError
+from pydanticmodelgen.errors import EnumConversionError
 
 
 def get_field_type(prop_name: str, prop_schema: Mapping[str, Any]) -> Any:
     """Determines the Pydantic field type from the JSON Schema."""
 
     schema_type: str | None = prop_schema.get("type")
+    schema_format: str | None = prop_schema.get("format")
 
     field_type = Any
     if "enum" in prop_schema:
@@ -30,19 +31,17 @@ def get_field_type(prop_name: str, prop_schema: Mapping[str, Any]) -> Any:
             raise EnumConversionError(
                 f"Error converting enum values for property '{prop_name}': {e}"
             ) from e
-    elif "format" in prop_schema:
-        if prop_schema["format"] == "date-time":
+    if schema_format and field_type is Any:
+        if schema_format == "date-time":
             field_type = datetime
-        elif prop_schema["format"] == "date":
+        elif schema_format == "date":
             field_type = date
-        elif prop_schema["format"] == "time":
+        elif schema_format == "time":
             field_type = time
-        elif prop_schema["format"] == "uri":
+        elif schema_format == "uri":
             field_type = str
         # TODO: Handle other formats that imply a specific type (e.g., email -> str)
-        else:
-            field_type = str  # No type information available or not implemented
-    elif schema_type:
+    if schema_type and field_type is Any:
         type_mapping = {
             "string": str,
             "number": float,
@@ -53,10 +52,6 @@ def get_field_type(prop_name: str, prop_schema: Mapping[str, Any]) -> Any:
             "null": None,
         }
         field_type = type_mapping.get(schema_type, Any)
-        if field_type is Any:
-            raise SchemaConversionError(
-                f"Unsupported schema type '{schema_type}' for property '{prop_name}'"
-            )
 
     return field_type
 

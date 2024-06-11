@@ -3,7 +3,21 @@ from typing import Any
 
 
 def handle_numeric_kwargs(prop_schema: Mapping[str, Any], field_kwargs: dict[str, Any]) -> None:
-    """Handles keyword arguments for numeric fields (int, float)."""
+    """
+    Handles keyword arguments for numeric fields (int, float).
+
+    Supports
+    - exclusiveMinimum
+    - exclusiveMaximum
+    - minimum
+    - maximum
+
+    :param prop_schema: The JSON Schema for the property.
+    :param field_kwargs: The keyword arguments for the Pydantic Field to which the options will be
+        added.
+    :return: None
+
+    """
     if "exclusiveMinimum" in prop_schema:
         field_kwargs["gt"] = prop_schema["exclusiveMinimum"]
     if "exclusiveMaximum" in prop_schema:
@@ -15,7 +29,19 @@ def handle_numeric_kwargs(prop_schema: Mapping[str, Any], field_kwargs: dict[str
 
 
 def handle_string_kwargs(prop_schema: Mapping[str, Any], field_kwargs: dict[str, Any]) -> None:
-    """Handles keyword arguments for string fields."""
+    """
+    Handles keyword arguments for string fields.
+
+    Supports
+    - pattern
+    - minLength
+    - maxLength
+
+    :param prop_schema: The JSON Schema for the property.
+    :param field_kwargs: The keyword arguments for the Pydantic Field to which the options will be
+        added.
+    :return: None
+    """
     if "pattern" in prop_schema:
         field_kwargs["pattern"] = prop_schema["pattern"]
     if "minLength" in prop_schema:

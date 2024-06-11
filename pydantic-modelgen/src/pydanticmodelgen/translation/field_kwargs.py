@@ -48,3 +48,14 @@ def handle_string_kwargs(prop_schema: Mapping[str, Any], field_kwargs: dict[str,
         field_kwargs["min_length"] = prop_schema["minLength"]
     if "maxLength" in prop_schema:
         field_kwargs["max_length"] = prop_schema["maxLength"]
+
+
+def handle_array_kwargs(prop_schema: Mapping[str, Any], field_kwargs: dict[str, Any]) -> None:
+    if "minItems" in prop_schema:
+        field_kwargs["min_length"] = prop_schema["minItems"]
+    if "maxItems" in prop_schema:
+        field_kwargs["max_length"] = prop_schema["maxItems"]
+    if "uniqueItems" in prop_schema:
+        # Pydantic doesn't support `unique_items` as a keyword argument,
+        # but we use `Set` instead of `List` later on when calling `pydantic.Field`.
+        field_kwargs["unique_items"] = prop_schema["uniqueItems"]
